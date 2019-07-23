@@ -5,11 +5,13 @@ import random
 
 def getImg(filename='./lena.tiff'):  # 画像読み込み&グレースケール化&正方化
     im_orig = np.array(Image.open(filename).convert('L'), np.float)
+    print('Read {}'.format(filename))
     return im_orig[:min(im_orig.shape), :min(im_orig.shape)]  # 正方化(左上)
 
 
 def saveImg(ImgArray, filename='./img.tiff'):  # 画像保存
     Image.fromarray(np.round(ImgArray).astype(np.uint8)).save(filename)
+    print('Save {}'.format(filename))
 
 
 def basis(k, n, N):  # DCT行列作成用基底関数
@@ -74,7 +76,12 @@ def addNoise(ImgArray, ratio=0.01):  # ごま塩ノイズ付加(default:1%)
 
 
 if __name__ == "__main__":
-    im_before = getImg()  # 画像読み込み
+    try:
+        im_before = getImg()  # 画像読み込み
+    except FileNotFoundError:  # ファイル存在なし
+        print('File not found')
+        exit()
+
     addNoise(im_before)  # ごま塩ノイズ付加
     saveImg(im_before, './before.tiff')  # 処理前画像保存
 
