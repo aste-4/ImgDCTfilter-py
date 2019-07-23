@@ -3,6 +3,15 @@ import numpy as np
 import random
 
 
+def getImg(filename='./lena.tiff'):  # 画像読み込み&グレースケール化&正方化
+    im_orig = np.array(Image.open(filename).convert('L'), np.float)
+    return im_orig[:min(im_orig.shape), :min(im_orig.shape)]  # 正方化(左上)
+
+
+def saveImg(ImgArray, filename='./img.tiff'):  # 画像保存
+    Image.fromarray(np.round(ImgArray).astype(np.uint8)).save(filename)
+
+
 def basis(k, n, N):  # DCT行列作成用基底関数
     a = np.sqrt(1/2) if k == 0 else 1
     c = np.sqrt(2/N)*a*np.cos((2*n+1)*k*np.pi/(2*N))
@@ -65,15 +74,10 @@ def addNoise(ImgArray, ratio=0.01):  # ごま塩ノイズ付加(default:1%)
 
 
 if __name__ == "__main__":
-    # グレースケール化して読み込み、np.arrayに
-    im_orig = np.array(Image.open('./lena.tiff').convert('L'), np.float)
-    im_before = im_orig[:min(im_orig.shape), :min(im_orig.shape)]  # 正方化
+    im_before = getImg()  # 画像読み込み
     addNoise(im_before)  # ごま塩ノイズ付加
-    # 処理前画像保存
-    Image.fromarray(im_before.astype(np.uint8)).save('./before.tiff')
+    saveImg(im_before, './before.tiff')  # 処理前画像保存
 
-    # im_IDCT = DCTsplitFilter(im_before, 8, LPF, 8)
-    im_IDCT = DCTFilter(im_before, LPF, im_before.shape[0]//2)
+    im_after = DCTFilter(im_before, LPF, im_before.shape[0]//2)  # フィルタ処理
 
-    # 処理後画像保存
-    Image.fromarray(np.round(im_IDCT).astype(np.uint8)).save('./after.tiff')
+    saveImg(im_after, './after.tiff')  # 処理後画像保存
