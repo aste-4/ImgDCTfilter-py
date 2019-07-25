@@ -1,6 +1,20 @@
 from PIL import Image
 import numpy as np
 import random
+import argparse
+
+
+def parseArgs():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-f', '--filename',
+                        default='./lena.tiff', help='Target image file name (default=\'./lena.tiff\')')
+    parser.add_argument('-p', '--filter', default='LPF',
+                        choices=['LPF', 'HPF'], help='Filter type (default=LPF)')
+    parser.add_argument('-s', '--strength', type=float,
+                        default=0.5, help='Filter strength (0~1) (default=0.5)')
+    parser.add_argument('-n', '--noise', action='store_true',
+                        help='Add salt and pepper noise before filter processing')
+    return parser.parse_args()
 
 
 def getImg(filename='./lena.tiff'):  # 画像読み込み&グレースケール化&正方化
@@ -38,16 +52,22 @@ def IDCTNxN(DCTArrayNxN):  # IDCT変換
     return buf
 
 
-def LPF(DCTArray, border):
-    for y in range(DCTArray.shape[0]):
-        for x in range(DCTArray.shape[1]):
-            DCTArray[y][x] = DCTArray[y][x] if x+y < border else 0.
+def LPF(DCTArray, strength):
+    if strength != 0:  # strengthが0の時は無処理
+        border = np.int(
+            np.floor((DCTArray.shape[0]+DCTArray.shape[1]-2)*(1-strength)))
+        for y in range(DCTArray.shape[0]):
+            for x in range(DCTArray.shape[1]):
+                DCTArray[y][x] = DCTArray[y][x] if x+y < border else 0.
 
 
-def HPF(DCTArray, border):
-    for y in range(DCTArray.shape[0]):
-        for x in range(DCTArray.shape[1]):
-            DCTArray[y][x] = DCTArray[y][x] if x+y > border else 0.
+def HPF(DCTArray, strength):
+    if strength != 0:  # strengthが0の時は無処理
+        border = np.int(
+            np.floor((DCTArray.shape[0]+DCTArray.shape[1]-2)*strength))
+        for y in range(DCTArray.shape[0]):
+            for x in range(DCTArray.shape[1]):
+                DCTArray[y][x] = DCTArray[y][x] if x+y > border else 0.
 
 
 # ImgArrayをsizeの正方に分割して度合いborderのFilterをかける
@@ -76,15 +96,20 @@ def addNoise(ImgArray, ratio=0.01):  # ごま塩ノイズ付加(default:1%)
 
 
 if __name__ == "__main__":
+    args = parseArgs()
+    print('filename:{}, filter:{}, strength:{}, noise:{}'.format(
+        args.filename, args.filter, args.strength, args.noise))
     try:
-        im_before = getImg()  # 画像読み込み
+        im_before = getImg(args.filename)  # 画像読み込み
     except FileNotFoundError:  # ファイル存在なし
         print('File not found')
         exit()
 
-    addNoise(im_before)  # ごま塩ノイズ付加
+    if args.noise:
+        addNoise(im_before)  # ごま塩ノイズ付加
     saveImg(im_before, './before.tiff')  # 処理前画像保存
 
-    im_after = DCTFilter(im_before, LPF, im_before.shape[0]//2)  # フィルタ処理
+    filter_type = LPF if args.filter == 'LPF' else HPF if args.filter == 'HPF' else None
+    im_after = DCTFilter(im_before, filter_type, args.strength)  # フィルタ処理
 
     saveImg(im_after, './after.tiff')  # 処理後画像保存
