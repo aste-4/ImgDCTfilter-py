@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from PIL import Image
 import numpy as np
 import random
@@ -12,8 +13,8 @@ def parseArgs():
                         choices=['LPF', 'HPF'], help='Filter type (default=LPF)')
     parser.add_argument('-s', '--strength', type=float,
                         default=0.5, help='Filter strength (0~1) (default=0.5)')
-    parser.add_argument('-n', '--noise', action='store_true',
-                        help='Add salt and pepper noise before filter processing')
+    parser.add_argument('-n', '--noise', type=float,
+                        help='Ratio of salt and pepper noise added before filter processing (0~1) (default=0)')
     return parser.parse_args()
 
 
@@ -105,8 +106,8 @@ if __name__ == "__main__":
         print('File not found')
         exit()
 
-    if args.noise:
-        addNoise(im_before)  # ごま塩ノイズ付加
+    if args.noise != None:
+        addNoise(im_before, args.noise)  # ごま塩ノイズ付加
     saveImg(im_before, './before.tiff')  # 処理前画像保存
 
     filter_type = LPF if args.filter == 'LPF' else HPF if args.filter == 'HPF' else None
